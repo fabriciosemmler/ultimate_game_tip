@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Crie e copie um prompt para obter uma dica de jogo na IA de sua preferência.">
+  <title>Ultimate Game Tip</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #10121a; color: #eef0f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 48px 20px; }
+    main { max-width: 680px; margin: auto; }
+    .badge { color: #b3f577; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+    h1 { margin: 12px 0; font-size: clamp(32px, 7vw, 46px); letter-spacing: -2px; }
+    .intro { color: #aeb5c8; line-height: 1.6; margin-bottom: 30px; }
+    form, .result { padding: 26px; border: 1px solid #303547; border-radius: 18px; background: #191d29; }
+    label { display: block; font-weight: 600; margin-bottom: 9px; }
+    .optional, .hint { color: #aeb5c8; font-size: 13px; font-weight: 400; }
+    input[type="text"], textarea, select { width: 100%; padding: 13px; border: 1px solid #41495e; border-radius: 9px; background: #10141f; color: inherit; font: inherit; }
+    input[type="text"], select { margin-bottom: 22px; }
+    textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+    input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid #b3f577; outline-offset: 3px; }
+    .hint { margin: 8px 0 22px; }
+    .check { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; }
+    .check input { width: 18px; height: 18px; accent-color: #b3f577; }
+    button { border: 0; border-radius: 9px; padding: 13px 20px; background: #b3f577; color: #15200c; font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover { background: #c7ff97; }
+    form button { width: 100%; }
+    .result { margin-top: 20px; }
+    .result[hidden] { display: none; }
+    .result-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    h2 { font-size: 18px; margin: 0; }
+    #prompt { min-height: 280px; }
+    #status { min-height: 22px; margin: 12px 0 0; color: #b3f577; font-size: 14px; }
+    footer { margin-top: 24px; text-align: center; color: #aeb5c8; font-size: 13px; }
+    @media (max-width: 480px) { body { padding: 28px 16px; } form, .result { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <span class="badge">UMA DICA PARA SUA PRÓXIMA JOGADA</span>
+    <h1>Ultimate Game Tip</h1>
+    <p class="intro">Travou no jogo? Conte o problema, copie seu prompt e cole no ChatGPT ou na IA de sua preferência.</p>
+    <form id="form">
+      <label for="game">Nome do jogo</label>
+      <input id="game" type="text" placeholder="Ex.: Hollow Knight" maxlength="150" required>
+      <label for="problem">Estou tendo problemas com…</label>
+      <textarea id="problem" placeholder="Descreva onde está, a dificuldade e o que já tentou." maxlength="4000" aria-describedby="problem-hint" required></textarea>
+      <p class="hint" id="problem-hint">Quanto mais específico o problema, mais útil será a dica.</p>
+      <label for="platform">Plataforma <span class="optional">(opcional)</span></label>
+      <select id="platform">
+        <option value="">Não informar</option>
+        <option>PC</option>
+        <option>PlayStation</option>
+        <option>Xbox</option>
+        <option>Nintendo Switch</option>
+        <option>Android</option>
+        <option>iOS</option>
+        <option>Outra</option>
+      </select>
+      <label class="check"><input id="spoilers" type="checkbox" checked> Evitar spoilers</label>
+      <button type="submit">Obter dica</button>
+    </form>
+    <section class="result" id="result" aria-labelledby="result-title" hidden>
+      <div class="result-header">
+        <h2 id="result-title">Seu prompt está pronto</h2>
+        <button id="copy" type="button">Copiar</button>
+      </div>
+      <textarea id="prompt" aria-label="Prompt gerado" readonly></textarea>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+    <footer>O prompt é gerado no seu navegador. Nenhuma IA é consultada pelo site.</footer>
+  </main>
+  <script>
+    const form = document.getElementById("form");
+    const game = document.getElementById("game");
+    const problem = document.getElementById("problem");
+    const platform = document.getElementById("platform");
+    const spoilers = document.getElementById("spoilers");
+    const result = document.getElementById("result");
+    const prompt = document.getElementById("prompt");
+    const status = document.getElementById("status");
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      for (const field of [game, problem]) {
+        if (!field.value.trim()) {
+          field.setCustomValidity("Preencha este campo com uma informação.");
+          field.reportValidity();
+          return;
+        }
+      }
+      prompt.value = [
+        "Ajude-me a resolver uma dificuldade em um jogo.",
+        `Jogo: ${game.value.trim()}`,
+        `Plataforma: ${platform.value || "não informada"}`,
+        `Estou tendo problemas com: ${problem.value.trim()}`,
+        "",
+        "Responda em português brasileiro, de forma concisa, precisa e amigável, preferencialmente em até 180 palavras.",
+        "Comece pela ação mais útil. Use passos numerados se houver uma sequência e considere o que eu já tentei.",
+        spoilers.checked
+          ? "Evite spoilers de história, personagens, áreas futuras e recompensas. Limite a orientação ao problema descrito e pergunte antes de revelar algo indispensável."
+          : "Spoilers são permitidos quando necessários para resolver o problema.",
+        "Não invente itens, locais, comandos ou mecânicas. Considere a plataforma e a versão, quando informadas.",
+        "Se faltar uma informação essencial, faça uma pergunta curta antes de orientar. Se não tiver certeza, diga isso.",
+        "Se tiver acesso à pesquisa na web e precisar confirmar informações, consulte fontes confiáveis e inclua os links utilizados."
+      ].join("\n");
+      result.hidden = false;
+      status.textContent = "Copie e cole este prompt na IA de sua preferência.";
+      result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    for (const field of [game, problem]) {
+      field.addEventListener("input", () => field.setCustomValidity(""));
+    }
+    document.getElementById("copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(prompt.value);
+        status.textContent = "Prompt copiado! Cole na IA de sua preferência.";
+      } catch {
+        prompt.focus();
+        prompt.select();
+        status.textContent = "Selecionei o prompt. Use Ctrl+C ou a opção Copiar do seu dispositivo.";
+      }
+    });
+  </script>
+</body>
+</html>
